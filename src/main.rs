@@ -17,7 +17,11 @@ struct ThirdPersonCamera {
 }
 
 #[derive(Component)]
-struct Elevator(f32);
+struct Elevator {
+    min_travel_height: f32,
+    max_travel_height: f32,
+    speed: f32,
+}
 
 fn main() {
     App::new()
@@ -147,6 +151,92 @@ fn spawn_floor_with_hole_for_elevator(
     ));
 }
 
+fn spawn_elevator(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    material: &MeshMaterial3d<StandardMaterial>,
+    elevator_floor_width: f32,
+    elevator_floor_thickness: f32,
+    elevator_wall_height: f32,
+    elevator_wall_thickness: f32,
+    min_elevator_height: f32,
+    max_elevator_height: f32,
+    elevator_speed: f32,
+) {
+    // Elevator
+    commands.spawn((
+        Elevator {
+            min_travel_height: min_elevator_height,
+            max_travel_height: max_elevator_height,
+            speed: elevator_speed
+        },
+        LinearVelocity(Vec3::new(0.0, elevator_speed, 0.0)),
+        RigidBody::Kinematic,
+        children![
+            // Floor
+            (
+                // Visuals
+                Mesh3d(meshes.add(Cuboid::new(
+                    elevator_floor_width,
+                    elevator_floor_thickness,
+                    elevator_floor_width,
+                ))),
+                (*material).clone(),
+                Transform::from_xyz(0.0, elevator_floor_thickness, 0.0),
+                Collider::cuboid(elevator_floor_width, elevator_floor_thickness, elevator_floor_width),
+            ),
+            // Left Wall
+            (
+                // Visuals
+                Mesh3d(meshes.add(Cuboid::new(
+                    elevator_wall_thickness,
+                    elevator_wall_height,
+                    elevator_floor_width,
+                ))),
+                (*material).clone(),
+                Transform::from_xyz(-(elevator_floor_width / 2.0), max_elevator_height / 2.0 + elevator_floor_thickness, 0.0),
+                Collider::cuboid(elevator_floor_thickness, elevator_wall_height, elevator_floor_width),
+            ),
+            // Right Wall
+            (
+                // Visuals
+                Mesh3d(meshes.add(Cuboid::new(
+                    elevator_wall_thickness,
+                    elevator_wall_height,
+                    elevator_floor_width,
+                ))),
+                (*material).clone(),
+                Transform::from_xyz(elevator_floor_width / 2.0, max_elevator_height / 2.0 + elevator_floor_thickness, 0.0),
+                Collider::cuboid(elevator_floor_thickness, elevator_wall_height, elevator_floor_width),
+            ),
+            // Back Wall
+            (
+                // Visuals
+                Mesh3d(meshes.add(Cuboid::new(
+                    elevator_floor_width,
+                    elevator_wall_height,
+                    elevator_wall_thickness,
+                ))),
+                (*material).clone(),
+                Transform::from_xyz(0.0, max_elevator_height / 2.0 + elevator_floor_thickness, elevator_floor_width / 2.0),
+                Collider::cuboid(elevator_floor_width, elevator_wall_height, elevator_floor_thickness),
+            ),
+            // ceiling
+            (
+                // Visuals
+                Mesh3d(meshes.add(Cuboid::new(
+                    elevator_floor_width,
+                    elevator_floor_thickness,
+                    elevator_floor_width,
+                ))),
+                (*material).clone(),
+                Transform::from_xyz(0.0, elevator_floor_thickness + max_elevator_height, 0.0),
+                Collider::cuboid(elevator_floor_width, elevator_floor_thickness, elevator_floor_width),
+            ),
+        ]
+    ));
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -154,9 +244,9 @@ fn setup(
 ) {
     let floor_y = 5.0;
     let floor_thickness = 0.01;
-    let floor_width = 100.0;
+    let floor_width = 50.0;
     let elevator_floor_size = 5.0;
-    let elevator_speed = 1.0;
+    let elevator_speed = 3.0;
     let floor_height = 5.0;
 
     // Ground Floor
@@ -170,6 +260,7 @@ fn setup(
     ));
 
     let blue_slab_material = materials.add(Color::srgb(0.0, 0.0, 1.0));
+    let purple_material = MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0)));
 
     // First floor
     spawn_floor_with_hole_for_elevator(
@@ -182,74 +273,19 @@ fn setup(
         blue_slab_material,
     );
 
-    // Elevator
-    commands.spawn((
-        Elevator(floor_height),
-        LinearVelocity(Vec3::new(0.0, elevator_speed, 0.0)),
-        RigidBody::Kinematic,
-        children![
-            // floor
-            (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_size,
-                    floor_thickness,
-                    elevator_floor_size,
-                ))),
-                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0))), // Purple
-                Transform::from_xyz(0.0, floor_thickness, 0.0),
-                Collider::cuboid(elevator_floor_size, floor_thickness, elevator_floor_size),
-            ),
-            // Left Wall
-            (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    floor_thickness,
-                    floor_height,
-                    elevator_floor_size,
-                ))),
-                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
-                Transform::from_xyz(-(elevator_floor_size / 2.0), floor_height / 2.0 + floor_thickness, 0.0),
-                Collider::cuboid(floor_thickness, floor_height, elevator_floor_size),
-            ),
-            // Right Wall
-            (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    floor_thickness,
-                    floor_height,
-                    elevator_floor_size,
-                ))),
-                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
-                Transform::from_xyz(elevator_floor_size / 2.0, floor_height / 2.0 + floor_thickness, 0.0),
-                Collider::cuboid(floor_thickness, floor_height, elevator_floor_size),
-            ),
-            // Back Wall
-            (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_size,
-                    floor_height,
-                    floor_thickness,
-                ))),
-                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
-                Transform::from_xyz(0.0, floor_height / 2.0 + floor_thickness, elevator_floor_size / 2.0),
-                Collider::cuboid(elevator_floor_size, floor_height, floor_thickness),
-            ),
-            // ceiling
-            (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_size,
-                    floor_thickness,
-                    elevator_floor_size,
-                ))),
-                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0))), // Purple
-                Transform::from_xyz(0.0, floor_thickness + floor_height, 0.0),
-                Collider::cuboid(elevator_floor_size, floor_thickness, elevator_floor_size),
-            ),
-        ]
-    ));
+    spawn_elevator(
+        &mut commands,
+        &mut meshes,
+        &purple_material,
+        elevator_floor_size,
+        floor_thickness,
+        floor_height,
+        floor_thickness,
+        0.0,
+        floor_height,
+        elevator_speed,
+    );
+
 
     // Player
     commands.spawn((
@@ -370,8 +406,10 @@ fn camera_follow(
 
 fn elevator_move(mut query: Query<(&Elevator, &mut LinearVelocity, &Transform)>, _time: Res<Time>) {
     for (elevator, mut vel, transform) in &mut query {
-        if transform.translation.y >= elevator.0 || transform.translation.y <= 0.0 {
-            vel.y = -vel.y;
+        if transform.translation.y >= elevator.max_travel_height {
+            vel.y = -elevator.speed;
+        } else if transform.translation.y <= elevator.min_travel_height {
+            vel.y = elevator.speed;
         }
     }
 }
