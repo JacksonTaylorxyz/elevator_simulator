@@ -4,28 +4,25 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 mod elevator;
+mod moveable;
 mod player;
 
+use elevator::{spawn_elevator, spawn_floor_with_hole_for_elevator};
+use moveable::MoveablePlugin;
 use player::PlayerPlugin;
-use elevator::{
-    ElevatorPlugin,
-    spawn_floor_with_hole_for_elevator,
-    spawn_elevator
-};
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, PhysicsPlugins::default(), PlayerPlugin, ElevatorPlugin))
+        .add_plugins((
+            DefaultPlugins,
+            PhysicsPlugins::default(),
+            MoveablePlugin,
+            PlayerPlugin,
+        ))
         .add_systems(Startup, setup)
-        .add_systems(
-            Update,
-            (
-                grab_cursor,
-            ),
-        )
+        .add_systems(Update, grab_cursor)
         .run();
 }
-
 
 fn setup(
     mut commands: Commands,
@@ -91,4 +88,3 @@ fn grab_cursor(
         window_cursor.visible = true;
     }
 }
-

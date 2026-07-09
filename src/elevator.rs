@@ -1,20 +1,10 @@
 use avian3d::prelude::*;
 use bevy:: prelude::*;
 
+use super::moveable::MoveBetweenPoints;
+
 #[derive(Component)]
-struct Elevator {
-    min_travel_height: f32,
-    max_travel_height: f32,
-    speed: f32,
-}
-
-pub struct ElevatorPlugin;
-impl Plugin for ElevatorPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, elevator_move);
-
-    }
-}
+struct Elevator;
 
 pub fn spawn_floor_with_hole_for_elevator(
     commands: &mut Commands,
@@ -141,12 +131,13 @@ pub fn spawn_elevator(
 ) {
     // Elevator
     commands.spawn((
-        Elevator {
-            min_travel_height: min_elevator_height,
-            max_travel_height: max_elevator_height,
-            speed: elevator_speed
-        },
-        LinearVelocity(Vec3::new(0.0, elevator_speed, 0.0)),
+        Elevator,
+        MoveBetweenPoints::new(
+            Vec3::new(0.0, min_elevator_height, 0.0),
+            Vec3::new(0.0, max_elevator_height, 0.0),
+            elevator_speed
+        ),
+        LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
         RigidBody::Kinematic,
         children![
             // Floor
@@ -212,14 +203,3 @@ pub fn spawn_elevator(
         ]
     ));
 }
-
-fn elevator_move(mut query: Query<(&Elevator, &mut LinearVelocity, &Transform)>, _time: Res<Time>) {
-    for (elevator, mut vel, transform) in &mut query {
-        if transform.translation.y >= elevator.max_travel_height {
-            vel.y = -elevator.speed;
-        } else if transform.translation.y <= elevator.min_travel_height {
-            vel.y = elevator.speed;
-        }
-    }
-}
-
