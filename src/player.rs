@@ -8,7 +8,7 @@ use bevy::{
 pub struct PlayerPlugin;
 
 #[derive(Component)]
-struct Player {
+pub struct Player {
     yaw: f32,
 }
 

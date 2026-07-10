@@ -128,7 +128,7 @@ pub fn spawn_elevator(
     min_elevator_height: f32,
     max_elevator_height: f32,
     elevator_speed: f32,
-) {
+)-> Entity {
     // Elevator
     commands.spawn((
         Elevator,
@@ -201,5 +201,5 @@ pub fn spawn_elevator(
                 Collider::cuboid(elevator_floor_width, elevator_floor_thickness, elevator_floor_width),
             ),
         ]
-    ));
+    )).id()
 }

@@ -4,10 +4,12 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 mod elevator;
+mod interactable;
 mod moveable;
 mod player;
 
 use elevator::{spawn_elevator, spawn_floor_with_hole_for_elevator};
+use interactable::{InteractablePlugin, Button};
 use moveable::MoveablePlugin;
 use player::PlayerPlugin;
 
@@ -16,6 +18,7 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
+            InteractablePlugin,
             MoveablePlugin,
             PlayerPlugin,
         ))
@@ -60,7 +63,7 @@ fn setup(
         blue_slab_material,
     );
 
-    spawn_elevator(
+    let elevator = spawn_elevator(
         &mut commands,
         &mut meshes,
         &purple_material,
@@ -72,6 +75,26 @@ fn setup(
         floor_height,
         elevator_speed,
     );
+
+    // "Button" 1
+    commands.spawn((
+        RigidBody::Static,
+        Button{target: elevator, range: 5.0},
+        Collider::cuboid(1.0, 1.5, 1.0),
+        Mesh3d(meshes.add(Cuboid::new(1.0, 1.5, 1.0))),
+        MeshMaterial3d(materials.add(Color::srgb(0.0, 0.0, 0.0))),
+        Transform::from_xyz(-5.0, 0.1, 0.0),
+    ));
+
+    // "Button" 2
+    commands.spawn((
+        RigidBody::Static,
+        Button{target: elevator, range: 5.0},
+        Collider::cuboid(1.0, 1.5, 1.0),
+        Mesh3d(meshes.add(Cuboid::new(1.0, 1.5, 1.0))),
+        MeshMaterial3d(materials.add(Color::srgb(0.0, 0.0, 0.0))),
+        Transform::from_xyz(-5.0, floor_height, 0.0),
+    ));
 }
 
 fn grab_cursor(
