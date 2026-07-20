@@ -1,7 +1,8 @@
+use super::app_state::AppState;
 use avian3d::prelude::*;
 use bevy::{
-    prelude::*,
     input::mouse::MouseMotion,
+    prelude::*,
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
@@ -20,19 +21,11 @@ struct ThirdPersonCamera {
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update,
-                (
-                player_look,
-                player_move,
-                camera_follow,
-                )
-            )
-            .add_systems(Startup,
-                (
-                spawn_player,
-                )
-            );
+        app.add_systems(
+            Update,
+            (player_look, player_move, camera_follow).run_if(in_state(AppState::InGame)),
+        )
+        .add_systems(OnEnter(AppState::InGame), spawn_player);
     }
 }
 
@@ -63,7 +56,6 @@ fn spawn_player(
         DirectionalLight::default(),
     ));
 }
-
 
 fn player_look(
     mut motion: MessageReader<MouseMotion>,

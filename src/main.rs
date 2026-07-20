@@ -3,15 +3,19 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
+mod app_state;
 mod elevator;
 mod interactable;
 mod moveable;
 mod player;
+mod ui;
 
+use app_state::AppState;
 use elevator::{spawn_elevator, spawn_floor_with_hole_for_elevator};
 use interactable::{InteractablePlugin, Button};
 use moveable::MoveablePlugin;
 use player::PlayerPlugin;
+use ui::UiPlugin;
 
 fn main() {
     App::new()
@@ -21,10 +25,16 @@ fn main() {
             InteractablePlugin,
             MoveablePlugin,
             PlayerPlugin,
+            UiPlugin
         ))
-        .add_systems(Startup, setup)
-        .add_systems(Update, grab_cursor)
+        .add_systems(OnEnter(AppState::InGame), setup)
+        .add_systems(OnEnter(AppState::Quit), quit)
+        .add_systems(Update, grab_cursor.run_if(in_state(AppState::InGame)))
         .run();
+}
+
+fn quit(mut exit: MessageWriter<AppExit>) {
+    exit.write(AppExit::Success);
 }
 
 fn setup(
