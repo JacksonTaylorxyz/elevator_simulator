@@ -31,6 +31,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     let floor_y = 5.0;
     let floor_thickness = 0.01;
@@ -50,7 +51,6 @@ fn setup(
     ));
 
     let blue_slab_material = materials.add(Color::srgb(0.0, 0.0, 1.0));
-    let purple_material = MeshMaterial3d(materials.add(Color::srgb(1.0, 0.0, 1.0)));
 
     // First floor
     spawn_floor_with_hole_for_elevator(
@@ -65,8 +65,6 @@ fn setup(
 
     let elevator = spawn_elevator(
         &mut commands,
-        &mut meshes,
-        &purple_material,
         elevator_floor_size,
         floor_thickness,
         floor_height,
@@ -74,6 +72,7 @@ fn setup(
         0.0,
         floor_height,
         elevator_speed,
+        asset_server
     );
 
     // "Button" 1

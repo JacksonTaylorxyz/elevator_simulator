@@ -1,5 +1,7 @@
 use avian3d::prelude::*;
 use bevy:: prelude::*;
+use std::f32::consts::PI;
+
 
 use super::moveable::MoveBetweenPoints;
 
@@ -119,8 +121,6 @@ pub fn spawn_floor_with_hole_for_elevator(
 
 pub fn spawn_elevator(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    material: &MeshMaterial3d<StandardMaterial>,
     elevator_floor_width: f32,
     elevator_floor_thickness: f32,
     elevator_wall_height: f32,
@@ -128,7 +128,17 @@ pub fn spawn_elevator(
     min_elevator_height: f32,
     max_elevator_height: f32,
     elevator_speed: f32,
+    asset_server: Res<AssetServer>,
 )-> Entity {
+    // Since the middle of the walls are at 0 on the Y, we need to shift them up half their height
+    // plus the amount of the floor.
+    let wall_start_height = max_elevator_height / 2.0 + elevator_floor_thickness;
+
+    // Height of where the ceiling should be
+    let ceiling_start_height = max_elevator_height + elevator_floor_thickness;
+
+    let elevator_asset = asset_server.load("elevator.glb#Scene0");
+
     // Elevator
     commands.spawn((
         Elevator,
@@ -139,65 +149,34 @@ pub fn spawn_elevator(
         ),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
         RigidBody::Kinematic,
+        SceneRoot(elevator_asset),
+        Transform::from_xyz(0.0, 0.01, 0.0)
+            .with_scale(Vec3::splat(5.0))
+            .with_rotation(Quat::from_rotation_y(PI)),
         children![
             // Floor
             (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_width,
-                    elevator_floor_thickness,
-                    elevator_floor_width,
-                ))),
-                (*material).clone(),
                 Transform::from_xyz(0.0, elevator_floor_thickness, 0.0),
                 Collider::cuboid(elevator_floor_width, elevator_floor_thickness, elevator_floor_width),
             ),
             // Left Wall
             (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_wall_thickness,
-                    elevator_wall_height,
-                    elevator_floor_width,
-                ))),
-                (*material).clone(),
-                Transform::from_xyz(-(elevator_floor_width / 2.0), max_elevator_height / 2.0 + elevator_floor_thickness, 0.0),
-                Collider::cuboid(elevator_floor_thickness, elevator_wall_height, elevator_floor_width),
+                Transform::from_xyz(-(elevator_floor_width / 2.0), wall_start_height, 0.0),
+                Collider::cuboid(elevator_wall_thickness, elevator_wall_height, elevator_floor_width),
             ),
             // Right Wall
             (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_wall_thickness,
-                    elevator_wall_height,
-                    elevator_floor_width,
-                ))),
-                (*material).clone(),
-                Transform::from_xyz(elevator_floor_width / 2.0, max_elevator_height / 2.0 + elevator_floor_thickness, 0.0),
-                Collider::cuboid(elevator_floor_thickness, elevator_wall_height, elevator_floor_width),
+                Transform::from_xyz(elevator_floor_width / 2.0, wall_start_height, 0.0),
+                Collider::cuboid(elevator_wall_thickness, elevator_wall_height, elevator_floor_width),
             ),
             // Back Wall
             (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_width,
-                    elevator_wall_height,
-                    elevator_wall_thickness,
-                ))),
-                (*material).clone(),
-                Transform::from_xyz(0.0, max_elevator_height / 2.0 + elevator_floor_thickness, elevator_floor_width / 2.0),
-                Collider::cuboid(elevator_floor_width, elevator_wall_height, elevator_floor_thickness),
+                Transform::from_xyz(0.0, wall_start_height, elevator_floor_width / 2.0),
+                Collider::cuboid(elevator_floor_width, elevator_wall_height, elevator_wall_thickness),
             ),
             // ceiling
             (
-                // Visuals
-                Mesh3d(meshes.add(Cuboid::new(
-                    elevator_floor_width,
-                    elevator_floor_thickness,
-                    elevator_floor_width,
-                ))),
-                (*material).clone(),
-                Transform::from_xyz(0.0, elevator_floor_thickness + max_elevator_height, 0.0),
+                Transform::from_xyz(0.0, ceiling_start_height, 0.0),
                 Collider::cuboid(elevator_floor_width, elevator_floor_thickness, elevator_floor_width),
             ),
         ]
